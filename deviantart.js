@@ -1,17 +1,49 @@
 var http = require('http');
 var https = require('https');
 var url = require('url');
-var headers = {
-  'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1.13) Gecko/20080311 Firefox/2.0.0.13'
-};
+var fs = require('fs');
+
+
+
+function getDataFrom(path){
+  https.get(options, function(response){
+    var data = '';
+    response.on('data', function(chunk){
+      data += chunk;
+    });
+    response.on('end', function(){
+      return data;
+    });
+  }).on('error', function(error){
+    console.error('Error updating token: ' + error);
+  });
+}
+
+// deviantArt.access_token = JSON.parse(data).access_token;
+// fs.writeFile('access_token.txt', deviantArt.access_token, function(error){
+//   if(error){
+//     throw error;
+//   }
+//   console.log('Access token saved to access_token.txt');
+// });
 
 var deviantArt = {
   access_token: '',
   client_id: 4787,
   client_secret: '36b25fc8db5d33504ef10e241679d6e0',
-  urlObject: {
-    protocol: 'https:',
-    hostname: 'www.deviantart.com'
+  readToken: function(){
+    fs.readFile('access_token.txt', 'utf8', function(error, data){
+      if(error){
+        throw error;
+      }
+      deviantArt.access_token = data;
+      console.log('Read token from access_token.txt successfully');
+    });
+  },
+  checkToken: function(){
+    deviantArt.urlObject.pathname = '/oauth2/placebo';
+    deviantArt.urlObject.query = '';
+    https.get();
   },
   updateToken: function (){
     deviantArt.urlObject.pathname = '/oauth2/token';
@@ -21,30 +53,15 @@ var deviantArt = {
       grant_type: 'client_credentials'
     };
     var options = {
-      protocol: deviantArt.urlObject.protocol,
-      hostname: deviantArt.urlObject.hostname,
-      path: url.parse(url.format(deviantArt.urlObject)).path,
-      headers: headers
+      path: url.parse(url.format(deviantArt.urlObject)).path
     };
-    https.get(options, function(response){
-      var data = '';
-      response.on('data', function(chunk){
-        data += chunk;
-      });
-      response.on('end', function(){
-        deviantArt.access_token = data;
-        console.log(data);
-      });
-    }).on('error', function(error){
-      console.error('Error updating token: ' + error);
-    });
   },
   getDailyDeviationsObject: function(){
     urlObject.pathname = '/api/v1/oauth2/browse/dailydeviations';
   }
 };
 
-deviantArt.updateToken();
+
 
 var server = http.createServer(function(req, res){
   res.end(deviantArt.access_token);
